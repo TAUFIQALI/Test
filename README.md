@@ -1,1 +1,1 @@
-# here i am including all my github commands
+# here I am including all my GitHub commands
