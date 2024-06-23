@@ -1,0 +1,12 @@
+    const TimezoneConversation = (inputTime, currentTimezone = 'UTC', convertTimezone = 'UTC', format = "YYYY-MM-DD HH:mm:ss") => {
+        try {
+            var currentTimeInGivenTimezone = moment.tz(inputTime, currentTimezone);
+            return currentTimeInGivenTimezone.clone().tz(convertTimezone).format(format);
+        } catch (e) {
+            return inputTime;
+        }
+    }
+    const userTimezone = Utils.getAccountData('userTimezoneRaw');
+<span style={{ fontSize: 'smaller' }}>
+                                    {TimezoneConversation(moment().toISOString(), 'UTC', userTimezone, "YYYY-MM-DD HH:mm:ss")}
+                                </span>
