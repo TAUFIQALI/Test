@@ -1,0 +1,41 @@
+    const handleDownloadPdf = async (e) => {
+        e.preventDefault();
+        setLoading(true); // Set loading to true before starting the process
+
+        // Assuming 'jsx-template' is the ID of the element you want to capture
+        const canvas = await html2canvas(document.getElementById('jsx-template'), {
+            scale: 2,
+            useCORS: true,
+            scrollY: -window.scrollY
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+
+        // A4 dimensions in points
+        const a4Width = 385;
+        const a4Height = 500; // Corrected A4 height in points
+
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([a4Width, a4Height]);
+
+        const pngImage = await pdfDoc.embedPng(imgData);
+
+        // Calculate dimensions to fit A4 while maintaining aspect ratio
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+
+        let width, height;
+        if (imgWidth / imgHeight > a4Width / a4Height) {
+            width = a4Width;
+            height = (imgHeight * a4Width) / imgWidth;
+        } else {
+            height = a4Height;
+            width = (imgWidth * a4Height) / imgHeight;
+        }
+
+        page.drawImage(pngImage, {
+            x: (a4Width - width) / 2, // Center horizontally
+            y: (a4Height - height) / 2, // Center vertically
+            width: width,
+            height: height,
+        });
