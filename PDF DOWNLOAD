@@ -1,0 +1,42 @@
+    const handleDownloadPdf = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        const canvas = await html2canvas(document.getElementById('jsx-template'), {
+            scale: 1.25,
+            useCORS: true,
+            scrollY: -window.scrollY
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+
+        // Calculate new dimensions
+        const originalWidth = canvas.width;
+        const originalHeight = canvas.height;
+        const scaleFactor = 0.5; // Adjust this value to scale down the image
+        const newWidth = originalWidth * scaleFactor;
+        const newHeight = originalHeight * scaleFactor;
+
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([newWidth, newHeight]);
+
+        const pngImage = await pdfDoc.embedPng(imgData);
+        page.drawImage(pngImage, {
+            x: 0,
+            y: 0,
+            width: newWidth,
+            height: newHeight,
+        });
+
+        const pdfBytes = await pdfDoc.save();
+        const blob = new Blob([pdfBytes], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `transaction_${props.data.id}.pdf`;;
+        a.click();
+
+        URL.revokeObjectURL(url);
+        setLoading(false);
+    };
