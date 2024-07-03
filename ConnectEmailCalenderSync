@@ -1,0 +1,58 @@
+import React, { useState, useEffect } from "react";
+import {
+    StyledCancelButton,
+    StyledConnectEmailButton,
+    StyledConnectEmailContent,
+    StyledConnectEmailIconWrapper, StyledConnectEmailWrapper
+} from "./ConnectedEmailsStyles";
+import { getConnectedEmails } from "../../../api/profileApi";
+import { EventNote } from "@material-ui/icons";
+import { useHistory } from "react-router-dom";
+
+const ConnectEmailCalenderSync = ({ handleCancel }) => {
+    const history = useHistory();
+    const [connectedEmails, setConnectedEmails] = useState([]);
+
+    useEffect(() => {
+        fetchConnectedEmails();
+    }, []);
+
+    const fetchConnectedEmails = async () => {
+        try {
+            const resp = await getConnectedEmails({});
+            if (resp && resp.data && resp.data.success) {
+                setConnectedEmails(resp.data.data);
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
+    // const latestEmail = connectedEmails.reduce((prev, current) =>
+    //     (prev.userConnectedEmailId > current.userConnectedEmailId) ? prev : current
+    // );
+    let latestEmail = connectedEmails[0];
+    for (let i = 1; i < connectedEmails.length; i++) {
+        if (connectedEmails[i].userConnectedEmailId > latestEmail.userConnectedEmailId) {
+            latestEmail = connectedEmails[i];
+        }
+    }
+    const emailProvider = latestEmail.credentialInfoProvider.toUpperCase();
+    return emailProvider !== "IMAP" && (
+        <StyledConnectEmailWrapper>
+            <StyledConnectEmailContent>
+                <StyledConnectEmailIconWrapper>
+                    <EventNote />
+                </StyledConnectEmailIconWrapper>
+                 <h1>Sync your calendar events</h1>
+                 <p>Synchronize your connected email calendar events with your account calendar</p>
+                 <div>
+                    <StyledCancelButton onClick={handleCancel}>Maybe later</StyledCancelButton>
+                    <StyledConnectEmailButton onClick={() => { history.push("/user/profile/calendar-sync") }}>Connect calendar</StyledConnectEmailButton>
+                 </div>
+            </StyledConnectEmailContent>
+        </StyledConnectEmailWrapper>
+    );
+};
+
+export default ConnectEmailCalenderSync;
