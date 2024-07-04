@@ -6,3 +6,52 @@
      const emailProvider = latestEmail && latestEmail.credentialInfoProvider ? latestEmail.credentialInfoProvider.toUpperCase() : "UNKNOWN";
     // Log the email provider to debug
     console.log("Email Provider:", emailProvider);
+    // const [connectedEmails, setConnectedEmails] = useState([]);
+
+    // useEffect(() => {
+    //     fetchConnectedEmails();
+    // }, []);
+
+    // const fetchConnectedEmails = async () => {
+    //     try {
+    //         const resp = await getConnectedEmails({});
+    //         if (resp && resp.data && resp.data.success) {
+    //             setConnectedEmails(resp.data.data);
+    //         }
+    //     } catch (err) {
+    //         console.log(err);
+    //     }
+    // };
+    
+    // if (connectedEmails.length === 0) {
+    //     console.log("No connected emails");
+    // }
+
+    // const latestEmail = connectedEmails.reduce((prev, current) =>
+    //     (prev.userConnectedEmailId > current.userConnectedEmailId) ? prev : current,
+    //     connectedEmails[0]
+    // );
+    
+    // let latestEmail = connectedEmails[0];
+    // for (let i = 1; i < connectedEmails.length; i++) {
+    //     if (connectedEmails[i].userConnectedEmailId > latestEmail.userConnectedEmailId) {
+    //         latestEmail = connectedEmails[i];
+    //     }
+    // }
+    
+    // const latestEmailId = Math.max(...connectedEmails.map(email => email.userConnectedEmailId));
+    // const latestEmail = connectedEmails.find(email => email.userConnectedEmailId === latestEmailId);
+    
+    // const latestEmail = connectedEmails.pop();
+    // console.log(latestEmail);
+
+    // const latestEmail = connectedEmails[connectedEmails.length - 1];
+    
+    // console.log("Connected Emails:", connectedEmails);
+    // console.log("Latest Email:", latestEmail);
+    
+    // if (!latestEmail) {
+    //     return null; 
+    // }
+
+    // const emailProvider = latestEmail.credentialInfoProvider.toUpperCase();
