@@ -1,0 +1,8 @@
+    const latestEmail = connectedEmails[connectedEmails.length - 1];
+
+    console.log("Connected Emails:", connectedEmails);
+    console.log("Latest Email:", latestEmail);
+    
+     const emailProvider = latestEmail && latestEmail.credentialInfoProvider ? latestEmail.credentialInfoProvider.toUpperCase() : "UNKNOWN";
+    // Log the email provider to debug
+    console.log("Email Provider:", emailProvider);
