@@ -1,0 +1,17 @@
+    // const latestEmail = connectedEmails.reduce((prev, current) =>
+    //     (prev.userConnectedEmailId > current.userConnectedEmailId) ? prev : current,
+    //     connectedEmails[0]
+    // );
+    
+    // let latestEmail = connectedEmails[0];
+    // for (let i = 1; i < connectedEmails.length; i++) {
+    //     if (connectedEmails[i].userConnectedEmailId > latestEmail.userConnectedEmailId) {
+    //         latestEmail = connectedEmails[i];
+    //     }
+    // }
+    
+    // const latestEmailId = Math.max(...connectedEmails.map(email => email.userConnectedEmailId));
+    // const latestEmail = connectedEmails.find(email => email.userConnectedEmailId === latestEmailId);
+    
+    // const latestEmail = connectedEmails.pop();
+    // console.log(latestEmail);
