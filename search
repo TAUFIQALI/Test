@@ -1,0 +1,85 @@
+    {
+        name: 'Quick Clone',
+        icon: SettingIconList.myTeam,
+        check: () => Utils.getAccountData("userIsOwner"),
+        link: '/user/profile/snapshot',
+        state: { from: 'settingPage' },
+        inProfileModule: true
+    },
+    {
+        name: 'Lookup Validation',
+        icon: SettingIconList.lookupValidation,
+        check: () => true,
+        link: '/user/lookup-validation',
+        state: { from: 'settingPage' },
+        inProfileModule: true
+    },
+    
+    {
+        name: 'Custom Menu',
+        icon: SettingIconList.menu,
+        check: () => true,
+        link: '/user/profile/custom-menu',
+        state: { from: 'settingPage' },
+        inProfileModule: true
+    },
+    
+    {
+        name: 'Payment Credentials',
+        icon: SettingIconList.paymentGateWay,
+        check: () => true,
+        link: '/user/invoice-settings',
+        state: { from: "settingPage", tab: 5 },
+        inProfileModule: true
+    },
+    {
+        name: 'Email/Text Templates',
+        icon: SettingIconList.products,
+        check: () => true,
+        link: '/user/invoice-settings',
+        state: { from: "settingPage", tab: 3 },
+        inProfileModule: true
+    },
+    {
+        name: 'Invoice Reminders',
+        icon: SettingIconList.products,
+        check: () => true,
+        link: '/user/invoice-settings',
+        state: { from: "settingPage", tab: 4 },
+        inProfileModule: true
+    },
+    {
+        name: 'Quick Clone Marketplace',
+        icon: SettingIconList.integrations,
+        check: () => Utils.getAccountData("first_promoter_signup_link") !==undefined || Utils.getAccountDat("first_promoter_signup_link" !== null),
+        link: '/user/profile/snapshot-marketplace',
+        state: { from: "settingPage" },
+        inProfileModule: true
+    },
+    
+    {
+        name: 'First Promoter',
+        icon: SettingIconList.firstPromoter,
+        check: () => Utils.getAccountData("first_promoter_signup_link") !== undefined || Utils.getAccountDat("first_promoter_signup_link" !== null),
+        link: '/user/profile/first-promoter',
+        state: { from: "settingPage" },
+        inProfileModule: true
+    },
+    {
+        name : 'Campaign Registration',
+        tag : "a2p messaging",
+        icon : SettingIconList.integrations,
+        check : () => true,
+        link : '/campaign/registration',
+        state: { from:'settingPage', tab : 0 },
+        inProfileModule : false
+    },
+    
+    {
+        name : 'Messaging Services',
+        icon : SettingIconList.pipelineSetting,
+        check: () => Utils.getAccountData("userId") === 1,
+        link : '/messaging/services',
+        state: { from:'settingPage', tab : 0 },
+        inProfileModule : false
+    },
