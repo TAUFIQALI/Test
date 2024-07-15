@@ -1,0 +1,270 @@
+import React, { useEffect, useState ,useRef} from 'react';
+import { connect } from 'react-redux';
+//moved to cdn
+// import '../contact/contact-list.css'
+// import '../contact/contact-list-responsive.css'
+import { IconList } from '../globals/IconList';
+import { DropdownHelper } from '../globals/DropdownHelper';
+import { GlobalTable } from '../globals/GlobalTable';
+import Utils from '../../helpers/Utils';
+import Helper from '../globals/helpers/Helper';
+import '../contact/contactList/theme/default.css'; // main css file
+import '../contact/contactList/styles.css'; // theme css file
+import "../contact/contactList/custom-styles.css";
+import { getDripBatchContactsByPagination } from '../../actions/dripBatchAction';
+import { icons } from './icon';
+import moment from 'moment';
+import { useHistory, Link } from "react-router-dom";
+
+
+const mapStateToProps = state => ({});
+
+const mapDispatchToProps = dispatch => ({
+    getDripBatchContactsByPagination: (params, callback) => dispatch(getDripBatchContactsByPagination(params, callback)),
+})
+
+
+const DripBatchContactList = (props) => {
+
+    //Pagination
+    const [contactlist, setContactList] = useState([])
+    const [totalContacts, setTotalContacts] = useState(0)
+    const [itemPerPage, setItemPerPage] = useState(10)
+    const [page, setPage] = useState(1)
+    const [lastPage, setLastPage] = useState(0)
+    const [loading, setLoading] = useState(true)
+    const [search, setSearch] = useState('')
+    const history = useHistory();
+
+
+    useEffect(() => {
+        document.title = `Batches | ${Utils.getAccountData('AuthUserAgencyName')}`;
+        if (window.setActiveSidebar) {
+            window.setActiveSidebar('report');
+        }
+    },[]);
+
+    useEffect(() => {
+        props.getDripBatchContactsByPagination({
+            perPage : itemPerPage, query: search, currentPage: page, batchId: props.match.params.id
+        }, (res) => {
+            setContactList(res.data)
+            setTotalContacts(res.total)
+            setLastPage(res.last_page)
+            setLoading(false)
+        })
+    }, [itemPerPage, page, search])
+
+    const columns = [
+        {
+            name: 'First name',
+            selector: row => row['first_name'],
+            minWidth: '250px',
+            /*
+            please do not remove those code
+            cell: row => <button row={row} onClick={(event) => {
+                console.log(event)
+            }} >hello</button>,
+            allowOverflow: true,
+            button: true,
+            width: '56px',
+            grow: 2, //do not know this props
+            ignoreRowClick: true
+            right: true,
+            center: true
+            */
+        },
+        {
+            name: 'Last name',
+            sortable: false,
+            minWidth: '250px',
+            selector: row => row['last_name']
+        },
+        {
+            name: 'Address ',
+            sortable: false,
+            minWidth: '250px',
+            selector: row => row['address']
+        },
+        {
+            name: 'Email',
+            sortable: false,
+            minWidth: '250px',
+            selector: row => row['email']
+        },
+        {
+            name: 'Number',
+            sortable: false,
+            minWidth: '250px',
+            selector: row => row['number']
+        },
+        {
+            name: 'Add to batch',
+            sortable: false,
+            minWidth: '250px',
+            selector: row => row['added_to_batch'],
+            cell: row => moment(row['added_to_batch']).format('MMM D, YYYY h:mm A')
+        },
+        {
+            name: 'Assigned to campaign',
+            sortable: false,
+            minWidth: '250px',
+            selector: row => row['assigned_time'],
+            cell: row => moment(row['assigned_time']).format('MMM D, YYYY h:mm A'),
+        }
+    ];
+
+    // pagination
+    const handlePaginationChange = (event, page) => {
+		event.preventDefault()
+		if(page != null){
+			setPage(page)
+		}
+	}
+
+	let previous_page = null, next_page = null; 
+	if(page > 1){
+		previous_page = page - 1
+	}
+
+	if(page != lastPage){
+		next_page = page + 1
+	}
+
+    return (
+        <React.Fragment>     
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start',width:'100%', padding:'10px' }}>
+                {
+                // history.location.state !== undefined && history.location.state.from === 'accountPage' &&
+                    <Link className={'modal-trigger accent--bg--text--color'} to="/batches" style={{ border: '1px solid #000', padding: '5px 10px', borderRadius: '5px', textDecoration: 'none', color: '#000'}}><span style={{color: '#9daac1', marginRight : 10}}
+                    ><svg width="15" height="15" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 10C0 4.4774 4.4774 0 10 0C15.5226 0 20 4.4774 20 10C20 15.5226 15.5226 20 10 20C4.4774 20 0 15.5226 0 10ZM10.2236 14.3923C10.2953 14.3212 10.3523 14.2366 10.3913 14.1434C10.4304 14.0502 10.4507 13.9502 10.4511 13.8492C10.4515 13.7482 10.432 13.6481 10.3937 13.5546C10.3554 13.4611 10.299 13.376 10.2279 13.3043L7.7125 10.7692H14.1346C14.3386 10.7692 14.5343 10.6882 14.6785 10.5439C14.8228 10.3997 14.9038 10.204 14.9038 10C14.9038 9.79599 14.8228 9.60033 14.6785 9.45607C14.5343 9.31181 14.3386 9.23077 14.1346 9.23077H7.7125L10.2279 6.69567C10.299 6.62389 10.3554 6.53879 10.3936 6.44524C10.4319 6.35169 10.4514 6.25152 10.4509 6.15045C10.4505 6.04937 10.4301 5.94938 10.391 5.85617C10.3519 5.76296 10.2949 5.67837 10.2231 5.60721C10.1513 5.53606 10.0662 5.47974 9.97264 5.44147C9.8791 5.40321 9.77892 5.38374 9.67785 5.38419C9.57678 5.38463 9.47678 5.40498 9.38357 5.44407C9.29037 5.48317 9.20577 5.54023 9.13462 5.61202L5.31779 9.45817C5.17481 9.60226 5.09458 9.79702 5.09458 10C5.09458 10.203 5.17481 10.3977 5.31779 10.5418L9.13462 14.388C9.20578 14.4599 9.29042 14.517 9.3837 14.5561C9.47697 14.5952 9.57704 14.6156 9.67819 14.616C9.77934 14.6164 9.87957 14.5968 9.97315 14.5585C10.0667 14.5201 10.1518 14.4636 10.2236 14.3923Z"></path></svg></span><span >Back</span></Link>
+                }
+            </div>
+        <div className="container-fulid">
+                <div className="dropdown-main-contact-row row">
+                    <div className="col l12">
+                        <div className="contact-top-filter-main">
+                            <div className="contact-top-filter-left">
+                                <ul>
+                                    <li className="add-contact">
+                                        <a className="dropdown-trigger btn">
+                                            <span className="contact-right-drop">Drip bridge-{props.match.params.title} </span>
+                                        </a>
+                                    </li>
+                                    
+                                </ul>
+                            </div>
+                            <div className="contact-top-filter-right">
+                                <ul>
+                                    <li className="filter-onwer input-field">
+                                        <div className="select-wrapper">
+                                            <DropdownHelper
+                                                datalist={[
+                                                    {value: 10, id: 10},
+                                                    {value: 25, id: 25},
+                                                    {value: 50, id: 50},
+                                                    {value: 100, id: 100},
+                                                ]}
+                                                className="second__step__area__select"
+                                                mapping={{ title: "value" }}
+                                                menuItemClassName=""
+                                                selectedValue={itemPerPage}
+                                                dropdownHeader={'ownerChange'}
+                                                parentDivClassName="ppc__select_owner"
+                                                updateSelectedData={(value) => setItemPerPage(value)}
+                                            />
+                                        </div>
+                                    </li>
+
+                                    <li className="search-data-table">
+                                        <div className="body-search">
+                                            <form action="#">
+                                                <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search" />
+                                                <button>{icons.search}</button>
+                                            </form>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            
+            
+                <div className="datatable-area">
+                    <div className="row datatable-scroll-row">
+                        <div className="col s12">
+                            <div className="Drip_table">
+                                <GlobalTable
+                                    table_unique_id={'drip_batch_contact_list'}
+                                    columns={columns}
+                                    data={contactlist}
+                                    className="highlight"
+                                    keyField={'id'}
+                                    noDataComponent={(
+                                        <span style={{ padding: 10, color: 'red' }}>No contact in list!</span>
+                                    )}
+                                    progressPending={loading}
+                                    defaultSortField="first_name"
+                                    selectableRows={false}
+                                    pagination={false}
+                                    subHeader={false}
+                                    noHeader={true}
+                                />
+
+                            </div>
+                            {totalContacts > 0 &&
+                                        <div className="pagination_bar">
+                                        <ul>
+                                            <li>
+                                                <a 
+                                                    href="#" onClick={(event) => handlePaginationChange(event, previous_page)}
+                                                    style={previous_page == null ? {cursor : 'not-allowed', backgroundColor: '#9daac1', borderColor: '#9daac1'} : {}}
+                                                >
+                                                    {icons.previous}
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a>
+                                                    <span>{page}</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a className="d-flex align-items-center"> 
+                                                    <span>
+                                                        {icons.backwardSlash}
+                                                    </span>	
+                                                    {lastPage}
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a 
+                                                    href="#" onClick={(event) => handlePaginationChange(event, next_page)}
+                                                    style={next_page == null ? {cursor : 'not-allowed', backgroundColor: '#9daac1', borderColor: '#9daac1'} : {}}
+                                                >
+                                                    {icons.next}	
+                                                </a>
+                                            </li>
+                                            <li style={{color: '#9daac1', marginLeft: 20}}><small className="paginations_text">Total entries : {totalContacts}</small></li>
+                                        </ul>
+                                    </div>
+                                    }
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </React.Fragment >
+    )
+}
+export default connect(mapStateToProps, mapDispatchToProps)(DripBatchContactList);
+
+
+
+// try{
+//     payload.append('api-key', "W6GSG6PQ6K5ZCQ1UQT5E"/* getCookie(process.env.REACT_APP_ACCESS_TOKEN) */)
+//     data = payload;
+// } catch (error) {
+//     data = {...payload, ...{'api-key': "W6GSG6PQ6K5ZCQ1UQT5E" /* getCookie(process.env.REACT_APP_ACCESS_TOKEN) */}};
+// }
