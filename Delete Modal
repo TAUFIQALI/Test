@@ -1,0 +1,26 @@
+const deleteCampaign = (e) => {
+    e.preventDefault();
+
+    CustomConfirmAlert({
+        handleConfirm: () => {
+            props.deleteCampaign(
+                { campaign_id: campaignDetails.basic.id },
+                (response) => {
+                    if (response.status == "success") {
+                        window.showNotification("SUCCESS", "Campaign deleted successfully");
+                        history.push("/campaign");
+                    } else {
+                        showAlert("Something Wrong!", "Please try again");
+                    }
+                }
+            );
+        },
+        callConfirmLast: true,
+        title: 'Are you sure?',
+        description: 'If you delete this campaign, you will not be able to restore it again.',
+        type_word: 'DELETE CAMPAIGN',
+        icon: 'question',
+        closeButtonText: 'No',
+        confirmButtonText: 'Yes'
+    });
+};
