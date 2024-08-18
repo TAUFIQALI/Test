@@ -1,0 +1,72 @@
+import React, { useState } from 'react';
+import { IconButton, CircularProgress } from '@material-ui/core';
+import SystemUpdateAltSharpIcon from '@mui/icons-material/SystemUpdateAltSharp';
+import html2canvas from 'html2canvas';
+import { PDFDocument } from 'pdf-lib';
+
+const DownloadPdfButton = ({ targetRef, fileName = 'download.pdf' }) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleDownloadPdf = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const canvas = await html2canvas(targetRef.current, {
+        scale: 2,
+        useCORS: true,
+        scrollY: -window.scrollY,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      // A4 dimensions in points (1 pt = 1/72 inch)
+      const pageWidth = 595.28;
+      const pageHeight = 841.89;
+
+      const originalWidth = canvas.width;
+      const originalHeight = canvas.height;
+
+      const widthScale = pageWidth / originalWidth;
+      const heightScale = pageHeight / originalHeight;
+      const scaleFactor = Math.min(widthScale, heightScale);
+
+      const pdfWidth = originalWidth * scaleFactor;
+      const pdfHeight = originalHeight * scaleFactor;
+
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([pageWidth, pageHeight]);
+
+      const pngImage = await pdfDoc.embedPng(imgData);
+      page.drawImage(pngImage, {
+        x: (pageWidth - pdfWidth) / 2,
+        y: pageHeight - pdfHeight,
+        width: pdfWidth,
+        height: pdfHeight,
+      });
+
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <IconButton size="small" onClick={handleDownloadPdf} disabled={loading}>
+      {loading ? <CircularProgress size={24} /> : <SystemUpdateAltSharpIcon />} {/* Download Icon */}
+    </IconButton>
+  );
+};
+
+export default DownloadPdfButton;
