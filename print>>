@@ -1,0 +1,50 @@
+import React, { forwardRef } from 'react';
+import { IconButton, makeStyles } from '@material-ui/core';
+import PrintIcon from '@material-ui/icons/Print';
+import ReactToPrint from 'react-to-print';
+
+const useStyles = makeStyles((theme) => ({
+  "@media print": {
+    "@page": {
+      size: "landscape",
+      margin: "0", // Remove margin for printing
+    },
+    // Adjust the layout and content styles for print
+    ".drawerWrapper": {
+      width: "100%",
+      maxWidth: "100%",
+      overflow: "visible",
+    },
+    ".tableWrapper": {
+      width: "100%",
+      fontSize: "10px",
+      overflowX: "auto",
+    },
+    ".MuiTableCell-root": {
+      padding: "4px",
+      fontSize: "10px",
+    },
+    ".drawerHeaderActions, .MuiTablePagination-root": {
+      display: "none", // Hide unnecessary elements
+    },
+  },
+}));
+
+const PrintButton = forwardRef(({ contentRef }, ref) => {
+  const classes = useStyles();
+
+  return (
+    <ReactToPrint
+      trigger={() => (
+        <IconButton size="small">
+          <PrintIcon />
+        </IconButton>
+      )}
+      content={() => contentRef.current}
+      pageStyle={classes["@media print"]}
+      ref={ref}
+    />
+  );
+});
+
+export default PrintButton;
