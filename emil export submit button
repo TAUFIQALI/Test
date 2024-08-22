@@ -1,0 +1,60 @@
+const handleSubmit = async () => {
+      try{
+          setSubmitting(true);
+          const emailsArray = [];
+
+          const splitEmails = emails.split(",");
+
+          for(let i = 0;i < splitEmails.length; i++){
+              let email = splitEmails[i];
+
+              if (email.trim() !== ""){
+                  emailsArray.push(email);
+              }else if (email.trim() === ""){
+                  setErrors("Remove extra comma");
+                  break;
+              }
+          }
+
+          setEmailsArray(emailsArray);
+
+          const invalidEmails = emailsArray.filter((email) => (!Utils.validateEmail(email)));
+
+          if (invalidEmails.length > 0) {
+              setErrors(`Invalid emails {${invalidEmails.join(", ")}}`);
+              return;
+          }
+
+        let resp;
+        if (props.isFirstPage) {  // Example prop to distinguish between the pages
+            const firstPagePayload = {
+                userProductId: props.formData.userProductId,
+                userIds: props.formData.userIds,
+                emails: emailsArray,
+                // Other fields specific to the first page
+            };
+            resp = await firstApiCall(firstPagePayload);
+        } else {
+            const secondPagePayload = {
+                startDate: props.formData.startDate ? window.globalTimezoneConversionToDifferentTimezone(props.formData.startDate, Utils.getAccountData('userTimezoneRaw'), "UTC", "YYYY-MM-DD HH:mm:ss") : null,
+                endDate: props.formData.endDate ? window.globalTimezoneConversionToDifferentTimezone(props.formData.endDate, Utils.getAccountData('userTimezoneRaw'), "UTC", "YYYY-MM-DD HH:mm:ss") : null,
+                emails: emailsArray,
+                // Other fields specific to the second page
+            };
+            resp = await secondApiCall(secondPagePayload);
+        }
+
+          if (resp?.success) {
+              setAccepted(true);
+              setErrors("");
+              window.showNotification("success", resp?.message);
+          } else {
+              console.error('Failed to export contacts:', resp.message);
+              window.showNotification("error", resp?.message);
+          }
+      }catch (err){
+          console.log(err);
+      }finally {
+          setSubmitting(false);
+      }
+    };
