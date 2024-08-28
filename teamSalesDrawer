@@ -1,0 +1,330 @@
+  import {
+    Box,
+    Chip,
+    Drawer,
+    makeStyles,
+    styled,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    Typography,
+  } from "@material-ui/core";
+  import React, { useEffect, useRef, useState } from "react";
+
+  import CloseIcon from "@material-ui/icons/Close";
+  import GetAppIcon from "@material-ui/icons/GetApp";
+  import { CustomButton } from "../productService/content/productBody/CustomButton";
+  import { productSalesContact, teamWiseSoldProducts } from "../../../api/productsApi";
+  import { Close } from "@material-ui/icons";
+  import Utils from "../../../helpers/Utils";
+  import ProductSalesDrawerSkeleton from "../productSalesReport/ProductSalesDrawerSkeleton";
+  import EmptyProductSalesDrawer from "../productSalesReport/EmptyProductSalesDrawer";
+  import { userTimeSelectConverter } from "../helper/functions";
+  import TeamExportModal from "./TeamExportModal";
+  import EmptyTeamDrawer from "./EmptyTeamDrawer";
+  import BootstrapTooltip from "../../globals/BootstrapTooltip";
+  import PrintButton from "../common/PrintButton";
+
+  const useStyles = makeStyles({
+
+    root: {
+      width: '100%',
+    },
+    container: {
+      maxHeight: '80vh',
+      "&::-webkit-scrollbar": {
+        width: "6px",
+      },
+      "&::-webkit-scrollbar-track": {
+        borderRadius: "10px",
+        backgroundColor: "#2c3e50",
+      },
+      "&::-webkit-scrollbar-thumb": {
+        backgroundColor: "#346fef",
+        borderRadius: "10px",
+      },
+    },
+    tableHead: {
+      fontWeight: 600,
+      fontSize: "16px",
+      color: "white",
+      backgroundColor: "#346FEF",
+
+    },
+  });
+
+
+  const StyledDrawer = styled(Drawer)(({ theme }) => ({
+    "& .drawerWrapper": {
+      width: 1000,
+
+      "& .drawerHeader": {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: 16,
+        backgroundColor:"#346FEF",
+      },
+      "& .drawerHeaderActions": {
+        display: "flex",
+        alignItems: "center",
+        gap: 16,
+      },
+
+      "& .drawerBody": {
+        paddingLeft: 16,
+      },
+
+      "& .tableWrapper": {
+        "& .MuiTableHead-root": {
+          color: "white",
+          backgroundColor: "#fff",
+          fontWeight: "bold",
+
+          "& .MuiTableCell-head": {
+            fontWeight: "bold",
+            fontSize:'16px',
+          },
+        },
+      },
+
+      "& .valueChip": {
+        color: '#346fef', backgroundColor: 'rgba(52, 111, 239, 0.05)', fontWeight: 600
+      },
+      "& .closeButton" : {
+          width:'25px',
+          height:'25px',
+          borderRadius:'50%',
+          display:"flex",
+          justifyContent:"center",
+          alignItems:"center",
+          backgroundColor:"#FF264A",
+          cursor:'pointer'
+      }
+
+    },
+  }));
+
+
+
+  const TeamSalesDrawer = ({ open, onClose, item, teamUsers,formData,}) => {
+    const [exportModalOpen, setExportModalOpen] = useState(false);
+    const classes = useStyles();
+    const [teamMemberSoldProducts, setTeamMemberSoldProducts] = useState([]);
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(100);
+    const [total, setTotal] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [teamUserObject, setTeamUserObject] = useState([]);
+    const contentRef = useRef(null);
+
+    useEffect(() => {
+      let length = teamUsers.length;
+
+      let tmp = [];
+      for (let i = 0; i < length; i++) {
+        tmp[teamUsers[i].id] = teamUsers[i].full_name;
+      }
+      setTeamUserObject(tmp);
+    }, []);
+
+    useEffect(() => {
+      handleProductSalesContact().then();
+    }, [page, rowsPerPage]);
+
+    const handleProductSalesContact = async () => {
+
+      const submitData = {
+        teamMemberUserId: item?.dealClosedBy,
+        page: page + 1,
+        perPage: rowsPerPage,
+        dealCloseStartDate: formData.dealCloseStartDate ? userTimeSelectConverter(formData.dealCloseStartDate) : null,
+        dealCloseEndDate: formData.dealCloseEndDate ? userTimeSelectConverter(formData.dealCloseEndDate) : null,
+      };
+      
+      
+
+      try {
+        setIsLoading(true);
+        const response = await teamWiseSoldProducts(submitData)       
+        if (response.success) {
+          setTeamMemberSoldProducts(response.data);
+          setTotal(response.totalCount);
+        } else {
+          setTeamMemberSoldProducts([]);
+        } 
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    const handleChangePage = (event, newPage) => {
+      setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event) => {
+      setRowsPerPage(+event.target.value);
+      setPage(0);
+    };
+
+
+    const handleOpenModal = () => {
+      setExportModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+      setExportModalOpen(false);
+    };
+
+  
+
+    const generateContact = (firstName, lastName, email) => {
+      if (firstName && lastName) {
+        return `${firstName} ${lastName}`;
+      } else if (firstName && !lastName) {
+        return firstName;
+      } else if (!firstName && lastName) {
+        return lastName;
+      } else if (email) {
+        return email;
+      }
+      else {
+        return 'N/A';
+      }
+    };
+
+    const handleDate = (date) => {
+      if (date) {
+        return window.globalTimezoneConversionToDifferentTimezone(date,"UTC",'', "MMM D, YYYY ");
+      }
+      return '';
+    };
+
+    return (
+      <StyledDrawer anchor={"right"} open={open} onClose={onClose}>
+        <div className="drawerWrapper">
+          <div className="drawerHeader">
+            <Typography  style={{color:"#fff", fontSize:'24px', fontWeight:'600'}} variant="h5">{item?.dealClosedBy ? teamUserObject[item.dealClosedBy] ? teamUserObject[item.dealClosedBy] : '' : ''}</Typography>
+
+            <div className="drawerHeaderActions">
+          <CustomButton
+                variant="contained"
+                startIcon={<GetAppIcon />}
+                disableElevation
+                size="small"
+                  style={{ fontSize: "14px", 
+                          textTransform: "capitalize",
+                          border: "2px solid white",
+                          padding:"2px 6px",
+                          borderRadius:"4px",
+                          
+                          }}
+                  onClick={handleOpenModal}
+                            
+              >
+                Export
+              </CustomButton>
+              { 
+            ( Utils.getAccountData("userId") === 2 ||  
+            Utils.getAccountData("userId") === 446) &&  
+            (<PrintButton contentRef={contentRef} />)
+            }
+                <Box onClick={onClose} className="closeButton" >
+                  <Close style={{color:'white'}} />
+                </Box>
+            </div>
+          </div>
+          {exportModalOpen &&
+            <TeamExportModal
+              teamMemberId={item?.dealClosedBy}
+              open={exportModalOpen}
+              onClose={handleCloseModal}
+            />        
+            }
+          <div style={{
+          height: 'calc(100vh - 133px)'
+        }} className="drawerBody">
+            {isLoading ? <ProductSalesDrawerSkeleton /> :
+              (teamMemberSoldProducts && !teamMemberSoldProducts[0] && !isLoading) ?
+                <EmptyTeamDrawer />
+                :
+                <div className={classes.root} >
+                  <TableContainer className={classes.container}>
+                    <Table stickyHeader className="tableWrapper" aria-label="simple table"ref={contentRef}>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell >Date Closed</TableCell>
+                          <TableCell >Contact</TableCell>
+                          <TableCell>Company</TableCell>
+                          <TableCell >Lead Source</TableCell>
+                          <TableCell>Product/Service
+                          </TableCell>
+                          <TableCell >Deal Value</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {teamMemberSoldProducts.map((team, index) => (
+                          <TableRow key={index}>
+                            <TableCell>{handleDate(team.dealClosedDate)}</TableCell>
+                            <TableCell>
+                              <a href={`/contacts/${team.contactId}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#316AFF', fontWeight: 'bold' }}>
+                                {generateContact(team.firstName, team.lastName, team.email)}
+                              </a>
+                            </TableCell>
+                            <TableCell>{team.companyName || ''}</TableCell>
+                            <TableCell>{team.sourceTitle || 'Single'}</TableCell>
+                            <TableCell >
+                              <div style={{width:'180px', display:'flex',gap:'10px',alignItems:'center'}}>
+                            <BootstrapTooltip arrow title={team.productName }>
+                              <div style={{maxWidth:'100px', whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}} >{team.productName }</div>
+                            </BootstrapTooltip>
+                            <div>
+                              {`: ${Utils.formatCurrency(team.dealProductValue
+                              , "$")}`}
+                              </div>
+                          </div>
+                            </TableCell>            
+                            <TableCell>
+                                <Chip
+                                  size="small"
+                                  label={Utils.formatCurrency(team.dealProductValue, "$") || Utils.formatCurrency(0, "$")}
+                                  clickable
+                                  color="primary"
+                                  className="valueChip"
+                                />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+
+                  <TablePagination
+                    rowsPerPageOptions={[25, 50,100]}
+                    component="div"
+                    count={total}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                  />
+                </div>
+            }
+          </div>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center',color:'white', backgroundColor:'#133159',padding:'16px'}}>
+            
+            <span style={{color:'white', fontSize:'24px', fontWeight:'600'}}>Total Deal Value:</span>
+
+            <span style={{color:'white', fontSize:'24px', fontWeight:'600',marginRight:'50px'}}>{Utils.formatCurrency(item.totalDealValue, "$")}</span>
+        </div>
+        </div>
+      </StyledDrawer>
+    );
+  };
+
+  export default TeamSalesDrawer;
