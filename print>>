@@ -6,10 +6,9 @@ import ReactToPrint from 'react-to-print';
 const useStyles = makeStyles((theme) => ({
   "@media print": {
     "@page": {
-      size: "landscape",
-      margin: "0", // Remove margin for printing
+      size: "A4 portrait",
+      margin: "10px", 
     },
-    // Adjust the layout and content styles for print
     ".drawerWrapper": {
       width: "100%",
       maxWidth: "100%",
@@ -25,7 +24,7 @@ const useStyles = makeStyles((theme) => ({
       fontSize: "10px",
     },
     ".drawerHeaderActions, .MuiTablePagination-root": {
-      display: "none", // Hide unnecessary elements
+      display: "none", 
     },
   },
 }));
@@ -36,8 +35,8 @@ const PrintButton = forwardRef(({ contentRef }, ref) => {
   return (
     <ReactToPrint
       trigger={() => (
-        <IconButton size="small">
-          <PrintIcon />
+        <IconButton size="medium">
+          <PrintIcon style={{color:"white"}} />
         </IconButton>
       )}
       content={() => contentRef.current}
