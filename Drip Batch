@@ -1,0 +1,543 @@
+import React, { useEffect, useState } from 'react'
+import { connect } from 'react-redux'
+import { icons } from './icon';
+import './lead_source.css'
+import moment from 'moment';
+import 'react-confirm-alert/src/react-confirm-alert.css';
+import { confirmAlert } from 'react-confirm-alert';
+import showNotification from '../../helpers/showNotification'
+import CachedIcon from '@material-ui/icons/Cached';
+import EditIcon from '@material-ui/icons/Edit';
+import {Link} from "react-router-dom";
+
+import { 
+	getDripBatchReportByPagination, 
+	_dripBatchReportReload,
+	_dripBatchReportPagination,
+	_dripBatchReportSearchText,
+	_dripBatchReportTitleEditModal,
+	_dripReportShowNotification
+ } from '../../actions/dripBatchAction';
+import EditTitleModal from './modals/EditTitleModal';
+import Utils from '../../helpers/Utils';
+import DeleteIcon from '@material-ui/icons/Delete';
+import { deleteDripBatchApi } from '../../api/dripBatchApi';
+import TimelineIcon from '@material-ui/icons/Timeline';
+import BootstrapTooltip from '../globals/BootstrapTooltip';
+import FrameWiseDripReport from './frameWiseDripReport/FrameWiseDripReport';
+import "./drip_batch.css"
+import SkeletonLoader from './SkeletonLoader';
+
+const mapStateToProps = state => ({
+    dripBatchReducer : state.dripBatchReducer
+});
+
+const mapDispatchToProps = dispatch => ({
+    getDripBatchReportByPagination: (params, callback) => dispatch(getDripBatchReportByPagination(params, callback)),
+    _dripBatchReportReload: (params) => dispatch(_dripBatchReportReload(params)),
+    _dripBatchReportPagination: (params) => dispatch(_dripBatchReportPagination(params)),
+    _dripBatchReportSearchText: (params) => dispatch(_dripBatchReportSearchText(params)),
+    _dripBatchReportTitleEditModal: (params) => dispatch(_dripBatchReportTitleEditModal(params)),
+    _dripReportShowNotification: (params) => dispatch(_dripReportShowNotification(params)),
+})
+
+const TYPE_MINUTE = 1
+const TYPE_HOUR = 2
+const TYPE_DAY = 3
+
+const DripBatchReportApp = (props) => {
+	const {show_notification, notification_text, notification_type, show_edit_modal} = props.dripBatchReducer
+
+	const [showFrameReport, setShowFrameReport] = useState(false)
+	const [selectedBatch, setSelectedBatch] = useState(null)
+
+	useEffect(() => {
+		document.title = `Batches | ${Utils.getAccountData('AuthUserAgencyName')}`;
+        if (window.setActiveSidebar) {
+            window.setActiveSidebar('report');
+        }
+	},[]);
+
+
+	useEffect(()=> {
+		if(show_notification){
+			props.showNotification(notification_text, notification_type)
+			props._dripReportShowNotification({
+				flag: false,
+                text: '',
+                type: 'success'
+			})
+		}
+	}, [show_notification]);
+
+	const hanldeOnClickCompletedSequence = (batch) => {
+		setSelectedBatch(batch)
+		setShowFrameReport(true)
+	}
+
+    return(
+		<div className="dripbatch_page_wrapper">
+			{/* head */}
+			<Header />
+			<div className="details">
+				
+				{/* search */}
+				{/* <Search /> */}
+
+				{/* table */}
+				<Table onClickCompletedSequence={hanldeOnClickCompletedSequence} />
+			</div>
+
+			{/* pagination */}
+			<Pagination />
+
+			{show_edit_modal &&
+				<EditTitleModal />
+			}
+			
+			{showFrameReport &&
+				<FrameWiseDripReport 
+					isOpen={showFrameReport}
+					onClose={() => {
+						setShowFrameReport(false)
+						setSelectedBatch(null)
+					}}
+					batch={selectedBatch}
+				/>
+			}
+		</div>
+    )
+
+}
+const DripBatchReport = connect(mapStateToProps, mapDispatchToProps)(showNotification(DripBatchReportApp));
+export default DripBatchReport;
+
+
+const HeaderApp = props => {
+
+    const handleRefreshReport = (e) => {
+        e.preventDefault()
+        props._dripBatchReportReload(true)
+    }
+
+    return(
+        <div className="tagBox">
+            <div className="tag_list">
+                <h5>Batches <span>report</span> </h5>
+            </div>
+            <div className="add_new_user">
+                <a href="#" className="modal-trigger" onClick={handleRefreshReport}>
+                    <span><CachedIcon fontSize="small" /></span>Refresh
+                </a>
+            </div>
+        </div>
+    )
+}
+export const Header = connect(mapStateToProps, mapDispatchToProps)(HeaderApp);
+
+
+const SearchApp = props => {
+	const {per_page, search_text} = props.dripBatchReducer
+	const [perPage, setPerPage] = useState(per_page)
+	const [search, setSearch] = useState(search_text)
+	
+	const handlePerPageChange = (event) => {
+		setPerPage(event.target.value)
+		props._dripBatchReportPagination({perPage: event.target.value})
+	}
+
+	const handleSearchChange = (event) => {
+		setSearch(event.target.value)
+		props._dripBatchReportPagination({currentPage: 1})
+		props._dripBatchReportSearchText(event.target.value)
+	}
+
+    return(
+		<div className="items">
+			<div className="records">
+				<span>Show</span>
+				<div className="input-field col s12">
+					<select style={{display: 'none'}} value={perPage} onChange={handlePerPageChange}>
+						<option value="10">10</option>
+						<option value="20">20</option>
+						<option value="30">30</option>
+						<option value="100">100</option>
+					</select>
+				</div>
+				<p>Records</p>
+			</div>
+			<div className="record_search">
+				<input type="text" placeholder="Search" value={search} className="search" onChange={handleSearchChange}/>
+				<div className="search_icon">
+					{icons.search}
+				</div>							
+			</div>
+		</div>
+    )
+}
+export const Search = connect(mapStateToProps, mapDispatchToProps)(SearchApp);
+
+
+const TableApp = props => {
+	const {need_to_reload, per_page, search_text, current_page} = props.dripBatchReducer
+	const [list, setList] = useState([])
+	const [loading, setLoading] = useState(false)
+	const [firstLanding, setFirstLanding] = useState(true)
+
+	useEffect(() => {
+		if(need_to_reload){
+			props._dripBatchReportReload(false)
+			if(!loading){
+				setLoading(true)
+				fetchLeadSourceData()
+			}
+		}
+	}, [need_to_reload])
+
+	useEffect(() => {
+		if(!loading){
+			if(firstLanding){
+				setLoading(true)
+				setFirstLanding(false)
+			}
+			fetchLeadSourceData()
+		}
+	}, [per_page, search_text])
+
+	const fetchLeadSourceData = () => {
+		props.getDripBatchReportByPagination({perPage : per_page, query: search_text, currentPage: current_page, from: 'ContactDripListGet'}, (res) => {
+			setList(res.data.data)
+			setLoading(false)
+			props._dripBatchReportPagination({
+				totalRecords: res.data.total,
+				totalPages: res.data.last_page
+			})
+		})
+	}
+
+	// const handleDeletDrip = (drip_id) => {
+	// 	alert("this process will be added soon")
+	// 	return
+	// 	deleteDripBatchApi({id: drip_id}).then(res => {
+	// 		let response = res.data;
+	// 		if(response.status === "success"){
+	// 			props._dripBatchReportPagination({currentPage: current_page})
+	// 			props._dripBatchReportReload(true)
+	// 		}else{
+	// 			window.showNotification("ERROR", "Something went wrong !");
+	// 		}
+	// 	}).catch(error => {
+	// 		console.log(error)
+	// 	})
+	// }
+
+	const tableHeader = () => {
+		return(
+			<thead className="">
+				<tr className="header">
+					<th>Title</th>
+					<th>Campaign</th>
+					<th>Batch Quantity</th>
+					<th>Completed Sequence</th>
+					<th>
+						<div>Total</div>
+						<small>Uploaded/Invalid/Processed</small>
+					</th>
+					<th>Action</th>
+				</tr>
+			</thead>
+		)
+		// return(
+		// 	<thead className="">
+		// 		<tr className="header">
+		// 			<th>Title</th>
+		// 			<th>Start on</th>
+		// 			<th>Campaign</th>
+		// 			<th>Batch Quantity</th>
+		// 			<th>Total Contacts</th>
+		// 			<th>Total Processed Contacts</th>
+		// 			<th>Action</th>
+		// 		</tr>
+		// 	</thead>
+		// )
+	}
+
+    return(
+        <table className="batches_report_table">
+			{tableHeader()}
+			<tbody className="tbody_content">
+
+				{(!loading && list.length == 0) &&
+				<tr>
+					<td colSpan={6}>No data available in table</td>
+				</tr>
+				}
+
+				{loading ? (
+					// <tr>
+					// 	<td colSpan={6}>Loading...</td>
+					// </tr> 
+					<SkeletonLoader/>
+				):( 
+				list.map((eachItem, index) => {
+					return(<EachRow eachItem={eachItem} eachIndex={index} key={index} handleDeletDrip={handleDeletDrip} onClickCompletedSequence={props.onClickCompletedSequence}/>)
+				}))
+				}
+			</tbody>
+		</table>
+    )
+}
+export const Table = connect(mapStateToProps, mapDispatchToProps)(TableApp);
+
+const EachRowApp = props => {
+	const {eachItem, eachIndex} = props
+
+	const [showDetails, setShowDetails] = useState(false)
+
+	const handleEditModal = (e) => {
+		e.preventDefault()
+		props._dripBatchReportTitleEditModal({modalShowFlag : true, editData: eachItem})
+	}
+
+	// const conrfirmDeleteDrip = () => {
+	// 	confirmAlert({ 
+    //         title: 'Confirm to delete',
+    //         message: 'Are you sure to delete this drip?',
+    //         buttons: [
+    //             {
+    //                 label: 'Yes',
+    //                 onClick: () => {
+	// 					props.handleDeletDrip(eachItem.id)
+    //                 }
+    //             },
+    //             {
+    //                 label: 'No',
+    //                 onClick: () => {
+    //                     return;
+    //                 }
+    //             }
+    //         ]
+    //     })
+	// }
+
+	const renderSendOnDay = (data) => {
+		try{
+			let view = [];
+			data = data.replace(/\\/g, '')
+			data = JSON.parse(data)
+			let index = 1;
+			for (const property in data) {
+				view.push(
+					<span key={index} className={`each__send__on__day ${data[property] ? 'send__on__active' : 'send__on__inactive'}`}>{property}</span>
+				)
+				index++;
+			}
+			return view;
+		}catch(error){
+			return <span>No Day selected !</span>
+		}
+	}
+
+	const sequenceLeft = () => {
+		let result = 0;
+		let contact_left = parseInt(eachItem.uploaded_contacts) - parseInt(eachItem.processed_contacts)
+		let quantity = parseInt(eachItem.quantity);
+		if(contact_left >= quantity){
+			result = Math.ceil(contact_left / quantity)
+		}else{
+			result = 1
+		}
+		return result;
+	}
+
+	let title = eachItem.title
+	if(title == null){
+		title = 'Batch_'+eachItem.id
+	}
+
+	return(
+		<>
+		<tr>
+			<td>
+				<div className="icon_text d-flex align-items-center">
+					<span className="table__row__expand__icon" onClick={() => setShowDetails(!showDetails)}> {showDetails ? '-' : '+'} </span>
+					<BootstrapTooltip title={title} arrow placement="top">
+						<div className="table_title_text">
+							<span style={{color: 'blue', cursor: 'pointer'}}><Link to={`/batch-contacts/${eachItem.id}/${title}`} >{title}</Link></span>
+						</div>
+					</BootstrapTooltip>
+				</div>
+			</td>
+			<td>
+				<span>{eachItem.campaign_title}</span> 
+			</td>
+			<td className="system_button">{eachItem.quantity}</td>
+			<td className="system_button">
+				<div className="drip__completed__field">
+					<span>{eachItem.total_drip_sequence_completed}</span>
+					<BootstrapTooltip title={'Click to show report'} arrow placement="top"><span className="drip__completed__field__timeline" onClick={() => props.onClickCompletedSequence(eachItem)}><TimelineIcon fontSize='small' /></span></BootstrapTooltip>
+				</div>
+			</td>
+			<td className="system_button">
+				<div className="drip__total__field">
+					<span className='drip__completed__processed'>{eachItem.uploaded_contacts}</span>
+					<span>/</span>
+					<span className='drip__completed__invalid'>{eachItem.invalid_contacts}</span>
+					<span>/</span>
+					<span className='drip__completed__uploaded'>{eachItem.processed_contacts}</span>
+				</div>
+			</td>
+			<td className="system_button">
+				<div className="drip__action__btn">
+					<div className="table_edit_icon">
+						<span style={{cursor: 'pointer'}} onClick={handleEditModal}><EditIcon fontSize="small"/></span>
+					</div>
+					{/* <div className="table_edit_icon">
+						<span style={{cursor: 'pointer'}} onClick={conrfirmDeleteDrip}><DeleteIcon fontSize="small"/></span>
+					</div> */}
+				</div>
+			</td>
+		</tr>
+
+		{showDetails &&
+		<tr>
+			<td colSpan={6} className="drip__expandable__row__td">
+				<div className='drip__expandable__row__wrapper'>
+					<div className="drip__expandable__row__common ">
+						<span className="drip__expandable__left__title">Sequence left:</span> 
+						<div>
+							<span className="date">{sequenceLeft()}   <small><i>  Based on current batch quantity</i></small></span>
+						</div>
+					</div>
+
+					<div className="drip__expandable__row__common ">
+						<span className="drip__expandable__left__title">Left contact for schedule:</span> 
+						<div>
+							<span className="date">{(eachItem.uploaded_contacts - eachItem.processed_contacts)}</span>
+						</div>
+					</div>
+
+					<div className="drip__expandable__row__common ">
+						<span className="drip__expandable__left__title">Start from:</span> 
+						<div>
+							<span className="date">{window.globalTimezoneConversionToDifferentTimezone(eachItem.start_from, 'UTC',"",'MM/DD/YYYY hh:mm a')}</span>
+						</div>
+					</div>
+
+					<div className="drip__expandable__row__common ">
+						<span className="drip__expandable__left__title">Status :</span> 
+						<div>
+							{eachItem.status === 1 ? 'Active' : 'Inactive'}
+						</div>
+					</div>
+
+					<div className="drip__expandable__row__common ">
+						<span className="drip__expandable__left__title">Process type :</span> 
+						<div>
+							{eachItem.type === TYPE_DAY ? 'DAY' : (eachItem.type === TYPE_HOUR ? 'HOUR' : 'Minute')}
+						</div>
+					</div>
+
+					<div className="drip__expandable__row__common ">
+						<span className="drip__expandable__left__title">Repeat after:</span> 
+						<div>
+							{eachItem.repeat_after_days} 
+							{eachItem.type === TYPE_DAY ? ' days' : (eachItem.type === TYPE_HOUR ? ' hours' : ' minutes')}
+						</div>
+					</div>
+					
+					<div className='drip__expandable__row__common'>
+						<span className="drip__expandable__left__title">Last Processing time: </span>
+						{eachItem.last_process_time == null ? 
+							<span>Not start yet !</span>
+							:
+							<span>{window.globalTimezoneConversionToDifferentTimezone(eachItem.last_process_time, 'UTC',"",'MM/DD/YYYY hh:mm a')}</span>
+						}
+					</div>
+
+					<div className='drip__expandable__row__common'>
+						<span className="drip__expandable__left__title">Next Processing time: </span>
+						{eachItem.next_process_time == null ? 
+							<span>Not start yet !</span>
+							:
+							<span>{window.globalTimezoneConversionToDifferentTimezone(eachItem.next_process_time, 'UTC',"",'MM/DD/YYYY hh:mm a')}</span>
+						}
+					</div>
+					<div className="drip__expandable__row__common  drip__expandable__left__send__wrapper">
+						<span className="drip__expandable__left__title">Assign on campaign:</span>
+						<div className='drip__expandable__left__send'>
+							{renderSendOnDay(eachItem.send_on)}
+						</div>
+					</div>
+				</div>
+			</td>
+		</tr>
+		}
+		</>
+	)
+}
+export const EachRow = connect(mapStateToProps, mapDispatchToProps)(EachRowApp);
+
+
+const paginationApp = props => {
+	const {total_records, total_pages, current_page, per_page} = props.dripBatchReducer
+
+	const handlePaginationChange = (event, page) => {
+		event.preventDefault()
+		if(page != null){
+			props._dripBatchReportPagination({currentPage: page})
+			props._dripBatchReportReload(true)
+		}
+	}
+
+	let previous_page = null, next_page = null; 
+	if(current_page > 1){
+		previous_page = current_page - 1
+	}
+
+	if(current_page != total_pages){
+		next_page = current_page + 1
+	}
+
+	if(total_records == 0){
+		return null
+	}
+
+    return(
+        <div className="pagination_bar">
+					<ul>
+						<li>
+							<a 
+								href="#" onClick={(event) => handlePaginationChange(event, previous_page)}
+								style={previous_page == null ? {cursor : 'not-allowed', backgroundColor: '#9daac1', borderColor: '#9daac1'} : {}}
+							>
+								{icons.previous}
+							</a>
+						</li>
+						<li>
+							<a>
+								<span>{current_page}</span>
+							</a>
+						</li>
+						<li>
+							<a className="d-flex align-items-center"> 
+								<span>
+									{icons.backwardSlash}
+								</span>	
+								{total_pages}
+							</a>
+						</li>
+						<li>
+							<a 
+								href="#" onClick={(event) => handlePaginationChange(event, next_page)}
+								style={next_page == null ? {cursor : 'not-allowed', backgroundColor: '#9daac1', borderColor: '#9daac1'} : {}}
+							>
+								{icons.next}	
+							</a>
+						</li>
+						<li style={{color: '#9daac1', marginLeft: 20}}><small className="paginations_text">Total entries : {total_records}</small></li>
+					</ul>
+		</div>
+    )
+}
+export const Pagination = connect(mapStateToProps, mapDispatchToProps)(paginationApp);
