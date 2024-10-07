@@ -1,0 +1,212 @@
+import React, { useState } from "react";
+import { InputBase, MenuItem, Select, makeStyles, withStyles } from "@material-ui/core";
+import ArrowBackIosIcon from '@material-ui/icons/ArrowBackIos';
+
+const useStyles = makeStyles((theme) => ({
+    menuItem: {
+        "&:hover": {
+            backgroundColor: "#cbd4ff",
+            color: "#133159",
+        },
+        "&.Mui-selected": {
+            backgroundColor: "#cbd4ff",
+            color: "#133159",
+        },
+    },
+    menuItemLineThrough: {
+        "&.MuiListItem-root": {
+            textDecoration: "line-through",
+            color: "#ee1b54",
+        },
+    },
+    deleted: {
+        fontSize: "9px"
+    },
+    rotatedIcon: {
+        transform: "rotate(270deg)", // Default rotation (pointing downwards)
+        transition: "transform 0.3s ease",
+    },
+    rotatedIconOpen: {
+        transform: "rotate(90deg)", // Rotate to 90 degrees when dropdown is open
+        marginTop: "10px",
+    },
+    iconLeft: {
+        marginLeft: "-30px", // Move the icon 10px to the left
+        fontSize: "15px",
+        fontWeight: "bold",
+        marginBottom: "8px",
+    },
+    optionText: {
+        overflow: "hidden",
+        whiteSpace: "nowrap",
+        textOverflow: "ellipsis",
+        flex: 1,
+    },
+}));
+
+const BasicInputSelect = withStyles((theme) => ({
+    root: {},
+    input: {
+        backgroundColor: "white !important",
+        position: "relative",
+        fontSize: "16px !important",
+        margin: "0 !important",
+        padding: "10px 12px 10px 14px !important", //top-right-bottom-left      
+        fontWeight: "600",
+        display: "flex",
+        alignItems: "center",
+        borderRadius: "8px !important",
+        border: "0.1px solid #ced4da !important",
+        height: "16px !important",
+        fontFamily: "'Inter', sans-serif",
+        transition: theme.transitions.create([
+            "border-color",
+            "box-shadow",
+            "background-color"
+        ]),
+        "&:focus": {
+            borderRadius: 4,
+            boxShadow: "0 0 5px rgba(0, 0, 0, .2)",
+            backgroundColor: "#fff !important"
+        },
+        "&:not(:focus)": {
+            boxShadow: "0 0 0 1px rgba(0, 0, 0, .05)"
+        },
+        "&::placeholder": {
+            color: "#082852 !important",
+        },
+    },
+}))(InputBase);
+
+const DashBoardBasicSelect = ({ options, mapping = { label: "title", value: "id" }, defaultText = "Select", name = "default", onChange, value = "", disabled = false, selectedOption, deletedMapping, className = null, emptyable = false, fullWidth = true }) => {
+    const styles = useStyles();
+    const placeholderColor = "rgb(8 40 82 / 44%)";
+    const activeColor = "#36454F";
+
+    const [isOpen, setIsOpen] = useState(false);
+
+    const handleSelectChange = (event) => {
+        onChange(event);
+
+        if (selectedOption) {
+            const selected = options.find((option) => option[mapping.value] === event.target.value);
+            if (selected) {
+                selectedOption(selected);
+            }
+        }
+    };
+
+    const handleOpen = () => {
+        setIsOpen(true);
+    };
+
+    const handleClose = () => {
+        setIsOpen(false);
+    };
+
+    const menuItems = () => {
+        return options?.map((option, index) => {
+            if (mapping) {
+                if (deletedMapping && option[deletedMapping.field] === deletedMapping.value) {
+                    if (value === option[mapping.value]) {
+                        return (
+                            <MenuItem
+                                disabled={
+                                    deletedMapping && option[deletedMapping.field] === deletedMapping.value
+                                }
+                                className={`${styles.menuItem} dropdownhelper-menuitem-class ${
+                                    deletedMapping && option[deletedMapping.field] === deletedMapping.value
+                                        ? styles.menuItemLineThrough
+                                        : ""
+                                }`}
+                                key={index}
+                                value={option[mapping.value]}
+                            >
+                                <span className={styles.optionText} style={{paddingRight:"15px"}}>{option[mapping.label]}</span>
+                                {deletedMapping && option[deletedMapping.field] === deletedMapping.value && (
+                                    <span className={styles.deleted}>(deleted)</span>
+                                )}
+                            </MenuItem>
+                        );
+                    } else {
+                        return null;
+                    }
+                } else {
+                    return (
+                        <MenuItem
+                            className={`${styles.menuItem} dropdownhelper-menuitem-class`}
+                            key={index}
+                            value={option[mapping.value]}
+                        >
+                            <span className={styles.optionText}style={{paddingRight:"15px"}}>{option[mapping.label]}</span>
+                        </MenuItem>
+                    );
+                }
+            } else {
+                return (
+                    <MenuItem
+                        className={`${styles.menuItem} dropdownhelper-menuitem-class`}
+                        key={index}
+                        value={option}
+                    >
+                        <span className={styles.optionText}style={{paddingRight:"15px"}}>{option}</span>
+                    </MenuItem>
+                );
+            }
+        });
+    };
+
+    return (
+        <Select
+            fullWidth={fullWidth}
+            defaultValue={value}
+            value={value}
+            onChange={handleSelectChange}
+            name={name}
+            displayEmpty
+            disabled={disabled}
+            input={
+                <BasicInputSelect
+                    style={{ color: `${!value ? placeholderColor : activeColor}` }}
+                    selectedOption={selectedOption}
+                />
+            }
+            inputProps={{ "aria-label": "Without label" }}
+            MenuProps={{
+                anchorOrigin: {
+                    vertical: "bottom",
+                    horizontal: "left",
+                },
+                transformOrigin: {
+                    vertical: "top",
+                    horizontal: "left",
+                },
+                PaperProps: {
+                    style: {
+                        maxHeight: "280px",
+                    },
+                },
+                getContentAnchorEl: null,
+            }}
+            className={className ?? ''}
+            onOpen={handleOpen}
+            onClose={handleClose}
+            IconComponent={() => (
+                <ArrowBackIosIcon
+                    className={`${styles.rotatedIcon} ${isOpen ? styles.rotatedIconOpen : ''} ${styles.iconLeft}`}
+                />
+            )}
+        >
+            <MenuItem
+                className={`${styles.menuItem} dropdownhelper-menuitem-class`}
+                value=""
+                disabled={!emptyable}
+            >
+                <span className={styles.optionText} style={{paddingRight:"15px"}}>{defaultText}</span>
+            </MenuItem>
+            {menuItems()}
+        </Select>
+    );
+};
+
+export default DashBoardBasicSelect;
