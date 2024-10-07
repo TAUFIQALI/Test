@@ -1,0 +1,255 @@
+import React, { useState } from "react";
+import {
+  InputBase,
+  MenuItem,
+  Select,
+  makeStyles,
+  withStyles,
+} from "@material-ui/core";
+import ArrowBackIosIcon from "@material-ui/icons/ArrowBackIos";
+import CalendarIcon from "./CalendarIcon";
+
+const useStyles = makeStyles((theme) => ({
+  menuItem: {
+    "&:hover": {
+      backgroundColor: "#cbd4ff",
+      color: "#133159",
+    },
+    "&.Mui-selected": {
+      backgroundColor: "#cbd4ff",
+      color: "#133159",
+    },
+    fontSize: "12px", // Decrease font size
+  },
+  menuItemLineThrough: {
+    "&.MuiListItem-root": {
+      textDecoration: "line-through",
+      color: "#ee1b54",
+    },
+  },
+  deleted: {
+    fontSize: "9px",
+  },
+  rotatedIcon: {
+    transform: "rotate(270deg)", // Default rotation (pointing downwards)
+    transition: "transform 0.3s ease",
+  },
+  rotatedIconOpen: {
+    transform: "rotate(90deg)", // Rotate to 90 degrees when dropdown is open
+    marginTop: "12px",
+  },
+  iconLeft: {
+    fontSize: "15px",
+    fontWeight: "700",
+    color: "#7e869a",
+    marginBottom: "8px",
+  },
+  wrapper: {
+    display: "flex",
+    alignItems: "center",
+    position: "relative",
+    backgroundColor: "white !important",
+    borderRadius: "8px !important",
+    border: "1px solid #ced4da !important",
+    paddingLeft: "12px",
+    paddingRight: "8px",
+    gap: "10px",
+    width: "100%",
+  },
+}));
+
+const BasicInputSelect = withStyles((theme) => ({
+  root: {},
+  input: {
+    backgroundColor: "white !important",
+    position: "relative",
+    fontSize: "16px !important",
+    margin: "0 !important",
+    padding: "10px 12px 10px 5px !important", // Padding for top-right-bottom-left
+    fontWeight: "600",
+    display: "flex",
+    alignItems: "center",
+    border: "none !important",
+    height: "20px",
+    fontFamily: "'Inter', sans-serif",
+    transition: theme.transitions.create([
+      "border-color",
+      "box-shadow",
+      "background-color",
+    ]),
+    "&:focus": {
+      borderRadius: 4,
+      boxShadow: "0 0 5px rgba(0, 0, 0, .2)",
+      backgroundColor: "#fff !important",
+    },
+    "&::placeholder": {
+      color: "#082852 !important",
+    },
+  },
+}))(InputBase);
+
+const CalenderBasicSelectWithIcon = ({
+  options,
+  mapping = { label: "title", value: "id" },
+  defaultText = "Select",
+  name = "default",
+  onChange,
+  value = "",
+  disabled = false,
+  selectedOption,
+  deletedMapping,
+  className = null,
+  emptyable = false,
+  fullWidth = true,
+  icon = <CalendarIcon />,
+}) => {
+  const styles = useStyles();
+  const placeholderColor = "rgb(8 40 82 / 44%)";
+  const activeColor = "#36454F";
+
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleSelectChange = (event) => {
+    onChange(event);
+
+    if (selectedOption) {
+      const selected = options.find(
+        (option) => option[mapping.value] === event.target.value
+      );
+      if (selected) {
+        selectedOption(selected);
+      }
+    }
+  };
+
+  const handleOpen = () => {
+    setIsOpen(true);
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+  };
+
+  const menuItems = () => {
+    return options?.map((option, index) => {
+      if (mapping) {
+        if (
+          deletedMapping &&
+          option[deletedMapping.field] === deletedMapping.value
+        ) {
+          if (value === option[mapping.value]) {
+            return (
+              <MenuItem
+                disabled={
+                  deletedMapping &&
+                  option[deletedMapping.field] === deletedMapping.value
+                }
+                className={`${styles.menuItem} dropdownhelper-menuitem-class ${
+                  deletedMapping &&
+                  option[deletedMapping.field] === deletedMapping.value
+                    ? styles.menuItemLineThrough
+                    : ""
+                }`}
+                key={index}
+                value={option[mapping.value]}
+              >
+                {option[mapping.label]}
+                {deletedMapping &&
+                  option[deletedMapping.field] === deletedMapping.value && (
+                    <span className={styles.deleted}>(deleted)</span>
+                  )}
+              </MenuItem>
+            );
+          } else {
+            return null;
+          }
+        } else {
+          return (
+            <MenuItem
+              className={`${styles.menuItem} dropdownhelper-menuitem-class`}
+              key={index}
+              value={option[mapping.value]}
+            >
+              {option[mapping.label]}
+            </MenuItem>
+          );
+        }
+      } else {
+        return (
+          <MenuItem
+            className={`${styles.menuItem} dropdownhelper-menuitem-class`}
+            key={index}
+            value={option}
+          >
+            {option}
+          </MenuItem>
+        );
+      }
+    });
+  };
+
+  return (
+    <div className={styles.wrapper}>
+      <div>{icon}</div>
+      <div style={{ width: "100%" }}>
+        <Select
+          fullWidth={fullWidth}
+          defaultValue={value}
+          value={value}
+          onChange={handleSelectChange}
+          name={name}
+          displayEmpty
+          disabled={disabled}
+          input={
+            <BasicInputSelect
+              style={{ color: `${!value ? placeholderColor : activeColor}` }}
+            />
+          }
+          inputProps={{ "aria-label": "Without label" }}
+          MenuProps={{
+            anchorOrigin: {
+              vertical: "bottom",
+              horizontal: "left",
+            },
+            transformOrigin: {
+              vertical: "top",
+              horizontal: "left",
+            },
+            PaperProps: {
+              style: {
+                maxHeight: "450px",
+                marginLeft: "-30px",
+                marginTop: "5px",
+                minWidth: "250px",
+              },
+            },
+            getContentAnchorEl: null,
+          }}
+          className={`${className ?? ""} ${styles.selectInput}`}
+          onOpen={handleOpen}
+          onClose={handleClose}
+          IconComponent={() => (
+            <span style={{ display: "flex", justifyContent: "end" }}>
+              <ArrowBackIosIcon
+                className={`${styles.rotatedIcon} ${
+                  isOpen ? styles.rotatedIconOpen : ""
+                } ${styles.iconLeft}`}
+              />
+            </span>
+          )}
+        >
+          <MenuItem
+            className={`${styles.menuItem} dropdownhelper-menuitem-class`}
+            value=""
+            disabled={!emptyable}
+          >
+            {defaultText}
+          </MenuItem>
+          {menuItems()}
+        </Select>
+      </div>
+    </div>
+  );
+};
+
+export default CalenderBasicSelectWithIcon;
